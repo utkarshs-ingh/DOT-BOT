@@ -5,17 +5,18 @@ class Gamble (commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.command(brief="Random number 1-100")
+
+    @commands.command(brief="Get a Random number 1-100")
     async def roll(self, ctx):
         num = rand.randrange(1, 101)
         await ctx.send(num)
 
     @commands.command(brief="Do a Dice Roll")
     async def dice(self, ctx):
-        num = rand.randrange(1, 6)
+        num = rand.randrange(1, 7)
         await ctx.send(num)
 
-    @commands.command(brief="Coin Flip")
+    @commands.command(brief="Do a Coin Flip")
     async def coin(self, ctx):
         num = rand.choice(["Heads", "Tails"])
         await ctx.send(num)
