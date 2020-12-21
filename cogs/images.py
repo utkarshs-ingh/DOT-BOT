@@ -28,7 +28,7 @@ class Images (commands.Cog):
                 if not submission.over_18 or ctx.channel.is_nsfw():
                     await ctx.send(submission.url)
                 else:
-                    await ctx.send("**NSFW post not allowed..ಠωಠ**")
+                    await ctx.send("**NSFW post not allowed here..ಠωಠ**")
 
             else:
                 await ctx.send("No Reddit :(")
