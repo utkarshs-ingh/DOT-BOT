@@ -7,7 +7,7 @@ class Basic (commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, ex):
         print(ex)
-        await ctx.send("**Invalid usage of command**")
+        await ctx.send("**Invalid command**")
     
     @commands.command()
     @commands.guild_only()
