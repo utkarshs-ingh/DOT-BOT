@@ -4,6 +4,7 @@ import random
 import re
 import typing as t
 from enum import Enum
+import pickle
 
 import discord
 import wavelink
@@ -114,10 +115,11 @@ class Queue:
         
         return self._queue[self.position]
     
+    @property
     def all_tracks(self):
         if not self._queue:
             raise QueueIsEmpty        
-        return self._queue[::].title
+        return self._queue[::]
     
     def shuffle(self):
         if not self._queue:
@@ -223,6 +225,9 @@ class Player(wavelink.Player):
 
     async def repeat_track(self):
         await self.play(self.queue.current_track)
+
+    async def all_track(self, ctx):
+        return self.queue.all_tracks
     
     async def upcoming_tracks(self, ctx):
         if self.queue.is_empty:
@@ -299,8 +304,16 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     @commands.command(name="disconnect", aliases=["leave", "dc"])
     async def disconnect_command(self, ctx):
-        channel = ctx.author.voice.channel
         player = self.get_player(ctx)
+        
+        try:
+            channel = ctx.author.voice.channel
+        except AttributeError:
+            raise NoVoiceChannel
+        finally:
+            if player.channel_id != channel.id:
+                raise NoVoiceChannel
+        
         await ctx.send(f'DJ DOT left **`{channel.name}`**')
         await player.destroy() # ask if user want to save playlist or completly remove all instances
         # await player.disconnect()      
@@ -311,6 +324,14 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         
         if not player.is_connected:
             await player.connect(ctx)
+        
+        try:
+            channel = ctx.author.voice.channel
+        except AttributeError:
+            raise NoVoiceChannel
+
+        if player.channel_id != channel.id:
+            raise NoVoiceChannel
 
         if query is None:
             if player.queue.is_empty:
@@ -325,6 +346,45 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         else:
             await player.add_tracks(ctx, await self.wavelink.get_tracks(f"ytsearch:{query}"))
 
+    @commands.command(name="loadplaylist", aliases=["loadpl"])
+    async def loadplaylist_command(self, ctx):
+        player = self.get_player(ctx)
+        
+        if not player.is_connected:
+            await player.connect(ctx)
+        
+        try:
+            channel = ctx.author.voice.channel
+        except AttributeError:
+            raise NoVoiceChannel
+
+        if player.channel_id != channel.id:
+            raise NoVoiceChannel
+
+
+        query = ['https://www.youtube.com/watch?v=NeXbmEnpSz0', 'https://www.youtube.com/watch?v=zN5LdqhaFuw']
+        for playlistTracks in query:
+            await player.add_tracks(ctx, await self.wavelink.get_tracks(playlistTracks))
+
+    
+    @commands.command(name="saveplaylist", aliases=["savepl"])
+    async def saveplaylist_command(self, ctx):
+        player = self.get_player(ctx)
+        
+        if not player.is_connected:
+            await player.connect(ctx)
+        
+        try:
+            channel = ctx.author.voice.channel
+        except AttributeError:
+            raise NoVoiceChannel
+
+        if player.channel_id != channel.id:
+            raise NoVoiceChannel
+
+        query = await player.all_track(ctx)
+        for playlistTracks in query:
+            print(playlistTracks.uri)
 
     @commands.command(name="playlist", aliases=["list", "ll"])
     async def display_queue(self, ctx):
@@ -347,7 +407,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         await player.stop()
         await ctx.send("Playback Stopped")
 
-    @commands.command(name="next", aliases=["nx"])
+    @commands.command(name="next", aliases=["nx", "nxt"])
     async def next_track_command(self, ctx):
         player = self.get_player(ctx)
 
@@ -389,8 +449,11 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             rep = ":repeat_one:"
         await ctx.send(f"Repeat mode set to {mode} {rep}")
         
-       
-
+    @disconnect_command.error
+    async def disconnect_command_error(self, ctx, exc):
+        if isinstance(exc, NoVoiceChannel):
+            await ctx.send("No suitable voice channel was provided.")
+        
     @play_command.error
     async def play_command_error(self, ctx, exc):
         if isinstance(exc, QueueIsEmpty):
