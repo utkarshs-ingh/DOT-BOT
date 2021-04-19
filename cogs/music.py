@@ -272,9 +272,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
         nodes = {
             "MAIN": {
-                "host": "127.0.0.1",
-                "port": 2333,
-                "rest_uri": "http://127.0.0.1:2333",
+                "host": "ibm-sprint.herokuapp.com",
+                "port": 80,
+                "rest_uri": "http://ibm-sprint.herokuapp.com:80",
                 "password": "youshallnotpass",
                 "identifier": "MAIN",
                 "region": "europe",

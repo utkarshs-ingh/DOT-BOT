@@ -1,1 +1,1 @@
-web: java -jar target/Lavalink.jar & python main.py
+web: python main.py
