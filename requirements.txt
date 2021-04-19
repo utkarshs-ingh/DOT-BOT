@@ -15,3 +15,5 @@ update-checker==0.18.0
 urllib3==1.26.2
 websocket-client==0.57.0
 yarl==1.5.1
+wavelink==0.9.6
+discord.py==1.5.1
