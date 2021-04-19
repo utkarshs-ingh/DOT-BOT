@@ -22,5 +22,5 @@ class MyServer(BaseHTTPRequestHandler):
 
 
 
-server_object = HTTPServer(('', os.getenv("PORT", 3000)), MyServer)
+server_object = HTTPServer(('', int(os.getenv("PORT", 3000))), MyServer)
 server_object.serve_forever()
