@@ -276,9 +276,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
         nodes = {
             "MAIN": {
-                "host": "dot-lavalink.herokuapp.com",
+                "host": "dot--bot.herokuapp.com",
                 "port": 80,
-                "rest_uri": "http://dot-lavalink.herokuapp.com:80",
+                "rest_uri": "http://dot--bot.herokuapp.com:80",
                 "password": "youshallnotpass",
                 "identifier": "MAIN",
                 "region": "europe",
