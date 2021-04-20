@@ -9,6 +9,7 @@ import pickle
 import discord
 import wavelink
 from discord.ext import commands
+from utils import save_data, savedPlaylists, loadPlaylists
 
 OPTIONS = {
     "1️⃣": 0,
@@ -51,6 +52,9 @@ class NoPreviousTracks(commands.CommandError):
 
 
 class InvalidRepeatMode(commands.CommandError):
+    pass
+
+class NoNamePlaylist(commands.CommandError):
     pass
 
 
@@ -278,6 +282,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
                 "password": "youshallnotpass",
                 "identifier": "MAIN",
                 "region": "europe",
+                "heartbeat": float(10000000),
             }
         }
 
@@ -347,7 +352,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             await player.add_tracks(ctx, await self.wavelink.get_tracks(f"ytsearch:{query}"))
 
     @commands.command(name="loadplaylist", aliases=["loadpl"])
-    async def loadplaylist_command(self, ctx):
+    async def loadplaylist_command(self, ctx, *, listname: str=""):
         player = self.get_player(ctx)
         
         if not player.is_connected:
@@ -360,15 +365,35 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
         if player.channel_id != channel.id:
             raise NoVoiceChannel
+       
+        if len(listname) == 0:
+            savedlists = await savedPlaylists(ctx.author.id)
+            if len(savedlists) == 0:
+                raise QueueIsEmpty
 
+            embed = discord.Embed(
+                title=f'Saved Playlists by:   **`{ctx.author.display_name}`**',
+                description=(
+                "\n".join(
+                        f"**{i+1}.** {t}"
+                        for i, t in enumerate(savedlists)
+                    )
+                ),
+                colour=ctx.author.colour
+            )
+            await ctx.send(embed=embed)
 
-        query = ['https://www.youtube.com/watch?v=NeXbmEnpSz0', 'https://www.youtube.com/watch?v=zN5LdqhaFuw']
-        for playlistTracks in query:
-            await player.add_tracks(ctx, await self.wavelink.get_tracks(playlistTracks))
+        else:
+            query = await loadPlaylists(ctx.author.id, listname)
+            if len(query) == 0:
+                raise QueueIsEmpty
 
+            for playlistTracks in query:
+                await player.add_tracks(ctx, await self.wavelink.get_tracks(playlistTracks))
+        
     
     @commands.command(name="saveplaylist", aliases=["savepl"])
-    async def saveplaylist_command(self, ctx):
+    async def saveplaylist_command(self, ctx, *, listname: str=""):
         player = self.get_player(ctx)
         
         if not player.is_connected:
@@ -383,8 +408,18 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             raise NoVoiceChannel
 
         query = await player.all_track(ctx)
+        if len(listname) == 0:
+            raise NoNamePlaylist
+
+        savelist = []
         for playlistTracks in query:
-            print(playlistTracks.uri)
+            savelist.append(playlistTracks.uri)
+        
+        if not len(savelist) == 0:
+            await save_data(ctx.author.id, listname, savelist)
+        else:
+            raise NoMoreTracks
+            
 
     @commands.command(name="playlist", aliases=["list", "ll"])
     async def display_queue(self, ctx):
@@ -462,6 +497,24 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             await ctx.send("No suitable voice channel was provided.")
         elif isinstance(exc, PlayerIsAlreadyPlaying):
             await ctx.send("** Playback is already playing :confused:**")
+
+    @saveplaylist_command.error
+    async def saveplaylist_command_error(self, ctx, exc):
+        if isinstance(exc, QueueIsEmpty):
+            await ctx.send("**Queue is empty :scream:**")
+        elif isinstance(exc, NoVoiceChannel):
+            await ctx.send("No suitable voice channel was provided.")
+        elif isinstance(exc, NoNamePlaylist):
+            await ctx.send("**Please provide a playlist name :confused:**")
+
+    @loadplaylist_command.error
+    async def loadplaylist_command_error(self, ctx, exc):
+        if isinstance(exc, QueueIsEmpty):
+            await ctx.send("**Queue is empty :scream:**")
+        elif isinstance(exc, NoVoiceChannel):
+            await ctx.send("No suitable voice channel was provided.")
+        elif isinstance(exc, NoNamePlaylist):
+            await ctx.send("**Please provide a playlist name :confused:**")
 
     @display_queue.error
     async def display_queue_error(self, ctx, exc):
