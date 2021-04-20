@@ -282,7 +282,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
                 "password": "youshallnotpass",
                 "identifier": "MAIN",
                 "region": "europe",
-                "heartbeat": float(10000000),
+                "heartbeat": float(10),
             }
         }
 
